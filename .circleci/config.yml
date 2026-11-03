@@ -1,0 +1,35 @@
+# Demo pipeline for testing Build Beacon (CircleCI → Jira).
+# Name a branch after a Jira issue key (e.g. kan-1-demo) and run the pipeline:
+# the workflow result appears on that Jira issue. A branch name containing "fail"
+# makes the test job fail, to show a failed build.
+version: 2.1
+
+jobs:
+  build:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - run: echo "Building $CIRCLE_BRANCH" && sleep 5
+  test:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - run: |
+          echo "Testing $CIRCLE_BRANCH"
+          if [[ "$CIRCLE_BRANCH" == *fail* ]]; then echo "Simulated test failure"; exit 1; fi
+  deploy-staging:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - run: echo "Deploying $CIRCLE_BRANCH to staging" && sleep 3
+
+workflows:
+  build-test-deploy:
+    jobs:
+      - build
+      - test:
+          requires: [build]
+      - deploy-staging:
+          requires: [test]
